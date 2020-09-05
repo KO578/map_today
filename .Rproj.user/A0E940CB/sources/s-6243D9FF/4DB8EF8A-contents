@@ -1,0 +1,296 @@
+---
+title: "test"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme: lumen
+    source_code: embed
+---
+
+```{r setup}, include=FALSE}
+library(leaflet)
+library(rgdal)
+library(crosstalk)
+#devtools::install_github("dmurdoch/leaflet@crosstalk4")
+setwd("C:/Users/oldenk/Desktop/subbasins_R_data")
+subbasin<-readOGR(".","subbasin_update")
+
+subbasin1 <- spTransform(subbasin, CRS("+init=epsg:4326"))
+subbasin1@data$TP<-as.numeric(levels(subbasin1@data$TP))[subbasin1@data$TP]
+subbasin1@data$TSS<-as.numeric(levels(subbasin1@data$TSS))[subbasin1@data$TSS]
+subbasin1@data$TN<-as.numeric(levels(subbasin1@data$TN))[subbasin1@data$TN]
+
+subbasin1@data$TP_avg_lb_<-as.numeric(levels(subbasin1@data$TP_avg_lb_))[subbasin1@data$TP_avg_lb_]
+subbasin1@data$TSS_avg_lb<-as.numeric(levels(subbasin1@data$TSS_avg_lb))[subbasin1@data$TSS_avg_lb]
+
+county<-readOGR(".","counties")
+county <- spTransform(county, CRS("+init=epsg:4326"))
+
+
+               
+sd <-  SharedData$new(subbasin1)
+sd_df <- SharedData$new(subbasin1@data, group = sd$groupName())
+
+
+```
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+filter_slider("TotLbP2acR", "TotLbP2acR", sd_df,column= ~TotLbP2acR)
+filter_slider("median", "median", sd_df,column= ~median)
+filter_slider("TP", "TP", sd_df,column= ~TP)
+filter_slider("TP_avg_lb_", "TP_avg_lb_", sd_df,column= ~TP_avg_lb_)
+filter_slider("TSS", "TSS", sd_df,column= ~TSS)
+filter_slider("TSS_avg_lb", "TSS_avg_lb", sd_df,column= ~TSS_avg_lb)
+filter_slider("TN", "TN", sd_df,column= ~TN)
+
+
+```
+
+
+Row {data-height=550}
+-------------------------------------
+
+###
+
+```{r}
+#manure p2O5 prep
+bins <- c(0,30, 40, 50, 60, 70, 80, 90,100,110,120,130)
+pal <- colorBin("YlOrRd", domain = subbasin1$TotLbP2acR, bins = bins)
+labels <- sprintf(
+  "<strong> Basin: %s</strong><br/>lb P2O5: %g<br/>Subbasin: %g",
+  subbasin1$mon_basin, subbasin1$TotLbP2acR,subbasin1$Subbasin) %>% lapply(htmltools::HTML)
+
+#soil p prep
+bins1 <-c(0,10,20,30, 40, 50,100,180) 
+pal1 <-colorBin("YlOrRd", domain=subbasin1$median,bins = bins1)
+labels1 <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>Median soil P (ppm): %g",
+  subbasin1$Subbasin, subbasin1$median) %>% lapply(htmltools::HTML)
+
+#TP prep 
+bins2<-c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
+pal2 <-colorBin("YlOrRd", domain=subbasin1$TP,bins = bins2)
+labels2 <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>TP - growing season median (mg/L): %g",
+  subbasin1$Subbasin, subbasin1$TP) %>% lapply(htmltools::HTML)
+
+#TP load ac prep 
+bins2a<-c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,0.8,0.9,1,1.5,2,2.5)
+pal2a <-colorBin("YlOrRd", domain=subbasin1$TP_avg_lb_,bins = bins2a)
+labels2a <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>lb TP per acre (mg/L): %g",
+  subbasin1$Subbasin, subbasin1$TP_avg_lb_) %>% lapply(htmltools::HTML)
+
+
+#TSS prep 
+bins3<-c(0, 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30)
+pal3 <-colorBin("YlOrRd", domain=subbasin1$TP,bins = bins3)
+labels3 <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>TSS - growing season median (mg/L): %g",
+  subbasin1$Subbasin, subbasin1$TSS) %>% lapply(htmltools::HTML)
+
+#TSS load ac prep 
+bins3a<-c(0,10,20,30,40,50,60,70,80,90,100,150,200,250,300)
+pal3a <-colorBin("YlOrRd", domain=subbasin1$TSS_avg_lb,bins = bins3a)
+labels3a <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>lb TSS per acre (mg/L): %g",
+  subbasin1$Subbasin, subbasin1$TSS_avg_lb) %>% lapply(htmltools::HTML)
+
+#TN prep 
+bins4<-c(0, 1, 2, 3, 4, 5, 6, 7,8)
+pal4 <-colorBin("YlOrRd", domain=subbasin1$TP,bins = bins4)
+labels4 <- sprintf(
+  "<strong>Subbasin: %s</strong><br/>TN - growing season median (mg/L): %g",
+  subbasin1$Subbasin, subbasin1$TN) %>% lapply(htmltools::HTML)
+
+
+
+map=leaflet(sd)  %>% 
+  addTiles(group = "Street View") %>% 
+  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+  setView(lng = -87.870196, lat=44.104887,zoom=9) %>% 
+  addPolygons(data=county,
+              color="grey",
+              group="county")%>%
+    #manure
+  addPolygons(data=subbasin1,
+              fillColor=~pal(TotLbP2acR),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="Manure P2O5",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  #soil P
+  addPolygons(data=subbasin1,
+              fillColor=~pal1(median),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="Soil P",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels1,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  #stream TP
+  addPolygons(data=subbasin1,
+              fillColor=~pal2(TP),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="TP",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels2,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  
+  #stream TP per ac
+  addPolygons(data=subbasin1,
+              fillColor=~pal2a(TP_avg_lb_),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="lb TP per ac",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels2a,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  #stream TSS
+  addPolygons(data=subbasin1,
+              fillColor=~pal3(TSS),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="TSS",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels3,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  
+  #stream TSS per ac
+  addPolygons(data=subbasin1,
+              fillColor=~pal3a(TSS_avg_lb),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="lb TSS per ac",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels3a,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  #stream TN
+  addPolygons(
+              fillColor=~pal4(TN),
+              weight = 1,
+              opacity = 1,
+              color = "white",
+              dashArray = "1",
+              fillOpacity = 0.5,
+              group="TN",
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              label = labels4,
+              labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  #Manure legend
+  addLegend("bottomright", pal = pal, values = ~TotLbP2acR,
+          title = "lb P2O5 per receiving <br> acre per year",
+          opacity = .5,
+        group = "Manure P2O5") %>%
+  #soil P legend
+  addLegend("bottomright", pal = pal1, values = ~median,
+            title = "Median soil P (ppm)",
+            opacity = .5,
+            group = "Soil P") %>%
+  #stream TP legend
+  addLegend("bottomleft", pal = pal2, values = ~TP,
+            title = "TP - growing season median (mg/L)",
+            opacity = .5,
+            group = "TP") %>%
+  #stream lb TP ac legend
+  addLegend("bottomleft", pal = pal2a, values = ~TP_avg_lb_,
+            title = "lb TP per acre",
+            opacity = .5,
+            group = "lb TP per ac") %>%
+  #stream TSS legend
+  addLegend("bottomleft", pal = pal3, values = ~TSS,
+            title = "TSS - growing season median (mg/L)",
+            opacity = .5,
+            group = "TSS") %>%
+  #stream lb TSS ac legend
+  addLegend("bottomleft", pal = pal3a, values = ~TSS_avg_lb,
+            title = "lb TSS per ac",
+            opacity = .5,
+            group = "lb TSS per ac") %>%
+  #stream TN legend
+  addLegend("bottomleft", pal = pal4, values = ~TN,
+            title = "TN - growing season median (mg/L)",
+            opacity = .5,
+            group = "TN") %>%
+  addLayersControl(
+    baseGroups = c("Street View", "Satellite"),
+    overlayGroups=c('Manure P2O5','Soil P','TP','TSS','TN','lb TP per ac','lb TSS per ac','county'),
+    options = layersControlOptions(collapsed = FALSE))
+map
+
+
+```
+
+
+
+
+
+
+
+
