@@ -146,7 +146,8 @@ mycols2<-c("#d83f57",
 
 Inputs {.sidebar}
 -----------------------------------------------------------------------
-
+###
+<strong>Subbasins that meet the filtering criteria below will display in the "FILTERED RESULTS" layer </strong>
 ```{r}
 filter_slider("Manure P2O5 Application (lb/P2O5/year)", "Manure P2O5 Application (lb/P2O5/year)", sd_df,column= ~TotLbP2acR)
 filter_slider("Median soil phosphorus (ppm)", "Median soil phosphorus (ppm)", sd_df,column= ~median)
@@ -165,25 +166,21 @@ filter_slider("Ignore this", "Ignore this", sd_df,column= ~TN)
 
 
 
-Row 
+Row {data-height=75}
 -------------------------------------
 
 ### 
-This iteractive map shows the following datasets:
+This interactive map shows the following datasets:
 
-- Median growing season (May - Oct) concentration of TP, TSS, and TN between 2017 - 2019 from stream monitoring (2016 - 2019 for Ahnapee at Washington, Silver at Willow (near Algoma), and 3 LTT sites at mouth of Kewaunee, Manitowoc, and Sheboygan)
-- Stream loads per acre for TP and TSS from stream monitoring 
-- Medain soil P concentration per subbasin, from CAFO NMPs
-- Average manure P2O5 spreading (lb/ac/year) per subbasin, from WDNR analysis
-- Layer titled "FILTERED RESULTS" will show which subbasins meet the criteria of the filter sliders in the left column. 
+- Median growing season (May - Oct) concentration of TP, TSS, and TN from stream monitoring. Data at most sites is from 2017 - 2019. The following sites have data from 2016 - 2019: Ahnapee at Washington, Silver at Willow (near Algoma), and 3 LTT sites at mouth of Kewaunee, Manitowoc, and Sheboygan.
+- Stream loads per acre for TP and TSS from stream monitoring.
+- Median soil P concentration per subbasin, from CAFO NMPs.
+- Average manure P2O5 spreading (lb/receiving ac/year) per subbasin, from WDNR analysis.
+- NOTE: Layers are transparent; however, layering multiple datasets results in colors that cannot be directly interpreted.
 
-Tips:
-
-- Layers are transparent; however, layering multiple datasets results in colors that cannot be directly interpreted 
-- Turn on the FILTERED RESULTS layer (with all other watershed layers off) to see which subbasins meet the criteria specified with the filter sliders (left column)
-- Most layers have more information when hovering cursor over the map
-
-```{r, out.width='100%', out.height='100%'}
+Row
+------------------------------------------
+```{r, out.width='100%', out.height ='100%'}
 
 #manure p2O5 prep
 bins <- c(0,50, 60, 70, 80, 90,100,110,120,130)
