@@ -53,6 +53,8 @@ mon <- spTransform(mon, CRS("+init=epsg:4326"))
 basin<-readOGR(".","trib_basin")
 basin <- spTransform(basin, CRS("+init=epsg:4326"))
 
+hucs<-readOGR(".","huc12")
+hucs <- spTransform(hucs, CRS("+init=epsg:4326"))
 
 blue_stream<-readOGR(".","non_impired_fill_in")
 blue_stream <- spTransform(blue_stream, CRS("+init=epsg:4326"))
@@ -196,7 +198,7 @@ labels1 <- sprintf(
   "<strong> Watershed: %s</strong><br/>Median soil P (ppm): %g<br/>Sample count: %g<br/>Q1: %g<br/>Q3: %g<br/>Subbasin: %s</strong>",
   subbasin1$mon_basin, subbasin1$median, subbasin1$count, subbasin1$Q1, subbasin1$Q3,subbasin1$Subbasin) %>% lapply(htmltools::HTML)
 
-
+label1_1<-sprintf("<strong> %s", hucs$HUC12_NAME)%>%lapply(htmltools::HTML)
 
 #TP prep 
 bins2<-c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
@@ -293,9 +295,20 @@ map=leaflet(sd)  %>%
               color="grey",
               opacity=0.8,
               group="Boundary: County")%>%
+    addPolylines(data=hucs,
+              color="black",
+              weight=1,
+              label=label1_1,
+              opacity=0.8,
+              highlight = highlightOptions(weight = 5,
+                                           color = "#666",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = FALSE),
+              group="Boundary: HUC 12")%>%
     addPolylines(data=basin,
              color = "black",
-             weight=2,
+             weight=2.5,
              opacity=.8,
              group="Boundary: Major trib basins")%>%
   
@@ -592,10 +605,10 @@ map=leaflet(sd)  %>%
   
   addLayersControl(
     baseGroups = c("Street View", "Satellite"),
-    overlayGroups=c('Manure P2O5 (lb/ac/year) - WDNR Analysis','Median Soil P (ppm) - CAFO NMPs','TP: Median growing season conc., in Watershed','TP: Median growing season conc., at Location','TP: lb per acre, in Watershed','TSS: Median growing season conc., in Watershed','TSS: Median growing season conc., at Location','TSS: lb per acre, in Watershed','TN: Median growing season conc., in Watershed','TN: Median growing season conc., at Location','Boundary: County','Boundary: Major trib basins','2020 Impaired Streams (TP & TSS)' ,'Unimpaired Streams (major)', '2020 Impaired Lakes (TP)','FILTERED RESULTS','Monitoring Locations and Activity' ),
+    overlayGroups=c('Manure P2O5 (lb/ac/year) - WDNR Analysis','Median Soil P (ppm) - CAFO NMPs','TP: Median growing season conc., in Watershed','TP: Median growing season conc., at Location','TP: lb per acre, in Watershed','TSS: Median growing season conc., in Watershed','TSS: Median growing season conc., at Location','TSS: lb per acre, in Watershed','TN: Median growing season conc., in Watershed','TN: Median growing season conc., at Location','Boundary: County','Boundary: Major trib basins','2020 Impaired Streams (TP & TSS)' ,'Unimpaired Streams (major)', '2020 Impaired Lakes (TP)','FILTERED RESULTS','Monitoring Locations and Activity','Boundary: HUC 12' ),
     options = layersControlOptions(collapsed = FALSE))%>%
 
-hideGroup(c('Manure P2O5 (lb/ac/year) - WDNR Analysis','Median Soil P (ppm) - CAFO NMPs','TP: Median growing season conc., in Watershed','TP: lb per acre, in Watershed','TSS: Median growing season conc., in Watershed','TSS: Median growing season conc., at Location','TSS: lb per acre, in Watershed','TN: Median growing season conc., in Watershed','TN: Median growing season conc., at Location', '2020 Impaired Lakes (TP)','FILTERED RESULTS','Monitoring Locations and Activity'))  # turn these off by default
+hideGroup(c('Manure P2O5 (lb/ac/year) - WDNR Analysis','Median Soil P (ppm) - CAFO NMPs','TP: Median growing season conc., in Watershed','TP: lb per acre, in Watershed','TSS: Median growing season conc., in Watershed','TSS: Median growing season conc., at Location','TSS: lb per acre, in Watershed','TN: Median growing season conc., in Watershed','TN: Median growing season conc., at Location', '2020 Impaired Lakes (TP)','FILTERED RESULTS','Monitoring Locations and Activity','Boundary: HUC 12'))  # turn these off by default
 
 
 map
