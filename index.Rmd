@@ -5,6 +5,8 @@ output:
     orientation: rows
     theme: lumen
     source_code: embed
+      includes:
+       in_header: GA_Script.html
 ---
 
 ```{r setup}, include=FALSE}
